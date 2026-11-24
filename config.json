@@ -1,0 +1,18 @@
+{
+  "host": "0.0.0.0",
+  "porta": 8090,
+  "exigir_login": true,
+  "intervalo_padrao_s": 60,
+  "timeout_padrao_s": 10,
+  "limiar_lento_ms": 5000,
+  "retencao_dias": 7,
+  "cooldown_min": 5,
+  "ca_bundle": "certs/globalsign-atlas-r46-alphaSSL-2026.pem",
+  "url_publica": "",
+  "canais_ativos": {
+    "telegram": false,
+    "google_chat": true,
+    "webhook": false,
+    "email": false
+  }
+}

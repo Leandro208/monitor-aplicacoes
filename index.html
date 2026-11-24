@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Monitor de Aplicações</title>
+<style>
+  :root {
+    --fundo: #f4f7f6;
+    --papel: #ffffff;
+    --texto: #2c3e50;
+    --texto-suave: #7f8c8d;
+    --borda: #e3e9e8;
+    --verde: #27ae60;
+    --verde-claro: #eafaf1;
+    --amarelo: #e6a100;
+    --amarelo-claro: #fdf6e3;
+    --vermelho: #e74c3c;
+    --vermelho-claro: #fdf2f2;
+    --cinza-claro: #f0f3f2;
+    --azul: #2980b9;
+    --sombra: 0 2px 10px rgba(44, 62, 80, .08);
+    --raio: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fundo); color: var(--texto);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  [hidden] { display: none !important; }
+  a { color: var(--azul); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---------- cabeçalho ---------- */
+  header.topo {
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px; background: var(--papel);
+    border-bottom: 1px solid var(--borda); position: sticky; top: 0; z-index: 20;
+  }
+  .marca { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .marca .bolinha { width: 12px; height: 12px; border-radius: 50%; background: var(--verde); }
+  .marca .bolinha.fora { background: var(--vermelho); }
+  .marca .bolinha.lento { background: var(--amarelo); }
+  .resumo { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pilula {
+    background: var(--cinza-claro); border-radius: 999px; padding: 4px 12px;
+    font-size: 13px; font-weight: 600; color: var(--texto-suave);
+  }
+  .pilula.ok { background: var(--verde-claro); color: #1e8449; }
+  .pilula.fora { background: var(--vermelho-claro); color: #c0392b; }
+  .pilula.lento { background: var(--amarelo-claro); color: #a37b00; }
+  .acoes-topo { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ---------- botões ---------- */
+  .btn {
+    border: 1px solid var(--borda); background: var(--papel); color: var(--texto);
+    padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 14px;
+    transition: .15s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--cinza-claro); }
+  .btn.primario { background: var(--verde); border-color: var(--verde); color: #fff; font-weight: 600; }
+  .btn.primario:hover { background: #219150; }
+  .btn.perigo { color: var(--vermelho); border-color: #f3c9c5; }
+  .btn.perigo:hover { background: var(--vermelho-claro); }
+  .btn.pequeno { padding: 5px 10px; font-size: 13px; }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* ---------- layout ---------- */
+  main { max-width: 1180px; margin: 0 auto; padding: 24px; display: grid; gap: 24px; }
+  .banner {
+    max-width: 1180px; margin: 16px auto 0; padding: 14px 18px; border-radius: var(--raio);
+    background: var(--amarelo-claro); border: 1px solid #f0d99a; color: #8a6a00;
+    font-weight: 600; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--papel); border-radius: var(--raio); box-shadow: var(--sombra);
+    border-left: 5px solid var(--cinza-claro); padding: 18px; display: flex;
+    flex-direction: column; gap: 12px; transition: .2s;
+  }
+  .card.ok { border-left-color: var(--verde); }
+  .card.lento { border-left-color: var(--amarelo); }
+  .card.fora { border-left-color: var(--vermelho); background: #fffbfb; }
+  .card.pausado { border-left-color: #bdc3c7; opacity: .8; }
+  .card-topo { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .card-topo h3 { margin: 0 0 2px; font-size: 17px; }
+  .card-topo .url { font-size: 12px; color: var(--texto-suave); word-break: break-all; }
+  .tag {
+    font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    background: var(--cinza-claro); color: var(--texto-suave); white-space: nowrap;
+  }
+  .tag.ok { background: var(--verde-claro); color: #1e8449; }
+  .tag.lento { background: var(--amarelo-claro); color: #a37b00; }
+  .tag.fora { background: var(--vermelho-claro); color: #c0392b; }
+  .metricas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .metrica { background: var(--cinza-claro); border-radius: 8px; padding: 8px 10px; }
+  .metrica span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave); }
+  .metrica strong { font-size: 15px; }
+  .spark { width: 100%; height: 32px; display: block; }
+  .spark.vazio { display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--texto-suave); background: var(--cinza-claro); border-radius: 6px; height: 32px; }
+  .motivo { font-size: 13px; background: var(--vermelho-claro); color: #b03a2e; border-radius: 6px; padding: 8px 10px; margin: 0; word-break: break-word; }
+  .rodape { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .rodape .desde { font-size: 12px; color: var(--texto-suave); }
+  .rodape .botoes { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ---------- painel ---------- */
+  .painel { background: var(--papel); border-radius: var(--raio); box-shadow: var(--sombra); padding: 20px; }
+  .painel h2 { margin: 0 0 14px; font-size: 17px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--borda); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave); }
+  tbody tr:hover { background: #fafcfb; }
+  .vazio { text-align: center; color: var(--texto-suave); padding: 28px 10px; }
+
+  /* ---------- modais ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(30, 42, 56, .45);
+    display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+  }
+  .modal {
+    background: var(--papel); border-radius: 12px; width: min(620px, 100%);
+    max-height: 92vh; overflow: auto; box-shadow: 0 18px 50px rgba(0,0,0,.25);
+  }
+  .modal > header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--borda); position: sticky; top: 0; background: var(--papel); z-index: 2; }
+  .modal > header h2 { margin: 0; font-size: 18px; }
+  .modal .corpo { padding: 18px 22px; }
+  .modal > footer { padding: 14px 22px; border-top: 1px solid var(--borda); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--papel); }
+  .x { border: 0; background: transparent; font-size: 24px; line-height: 1; cursor: pointer; color: var(--texto-suave); }
+
+  /* ---------- formulários ---------- */
+  .campo { margin-bottom: 14px; }
+  .campo label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .campo input[type=text], .campo input[type=password], .campo input[type=number],
+  .campo select, .campo textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid #cfd8d6; border-radius: 8px;
+    background: #fff; font-size: 14px;
+  }
+  .campo input:focus, .campo select:focus, .campo textarea:focus {
+    outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(41,128,185,.12);
+  }
+  .campo .dica { font-size: 12px; color: var(--texto-suave); margin-top: 4px; }
+  .linha { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  .caixa { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; }
+  .caixa input { width: 16px; height: 16px; }
+  .bloco { border: 1px solid var(--borda); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+  .bloco h3 { margin: 0 0 12px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave); }
+
+  /* ---------- gaveta de ajustes ---------- */
+  .gaveta {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(580px, 100%);
+    background: var(--papel); box-shadow: -10px 0 40px rgba(0,0,0,.18);
+    z-index: 60; display: flex; flex-direction: column;
+  }
+  .gaveta header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--borda); }
+  .gaveta header h2 { margin: 0; font-size: 18px; }
+  .abas { display: flex; gap: 4px; padding: 10px 20px 0; border-bottom: 1px solid var(--borda); }
+  .aba { border: 0; background: transparent; padding: 10px 14px; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; color: var(--texto-suave); }
+  .aba.ativa { border-bottom-color: var(--verde); color: var(--texto); font-weight: 700; }
+  .gaveta .conteudo { padding: 18px 20px; overflow: auto; flex: 1; }
+  .gaveta footer { padding: 14px 20px; border-top: 1px solid var(--borda); display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* ---------- login ---------- */
+  #tela-login { background: linear-gradient(135deg, #eef4f2, #dde9e6); }
+  .login-caixa { background: var(--papel); padding: 30px; border-radius: 14px; width: min(380px, 100%); box-shadow: 0 20px 50px rgba(0,0,0,.15); }
+  .login-caixa h1 { font-size: 20px; margin: 0 0 6px; }
+  .login-caixa p { color: var(--texto-suave); font-size: 14px; margin: 0 0 20px; }
+
+  /* ---------- toasts ---------- */
+  #toasts { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+  .toast {
+    background: #2c3e50; color: #fff; padding: 12px 16px; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2); font-size: 14px; max-width: 360px;
+    animation: entrar .2s ease-out;
+  }
+  .toast.erro { background: #c0392b; }
+  .toast.ok { background: #1e8449; }
+  @keyframes entrar { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .aviso {
+    background: var(--amarelo-claro); border: 1px solid #f0d99a; color: #8a6a00;
+    padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+  }
+  .resultado-teste { font-size: 13px; margin-top: 10px; }
+  .resultado-teste .linha-res { padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; }
+  .resultado-teste .linha-res.ok { background: var(--verde-claro); color: #1e8449; }
+  .resultado-teste .linha-res.erro { background: var(--vermelho-claro); color: #c0392b; }
+
+  @media (max-width: 640px) {
+    header.topo { padding: 12px 16px; }
+    main { padding: 16px; }
+    .metricas { grid-template-columns: 1fr 1fr; }
+    .linha { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="tela-login" class="overlay" hidden>
+  <form class="login-caixa" onsubmit="fazerLogin(event)">
+    <h1>🛰️ Monitor de Aplicações</h1>
+    <p>Informe a senha para acessar o monitoramento.</p>
+    <div class="campo">
+      <label for="senha-login">Senha</label>
+      <input type="password" id="senha-login" autocomplete="current-password" autofocus>
+    </div>
+    <p id="erro-login" style="color:var(--vermelho);font-size:13px;margin:0 0 12px" hidden></p>
+    <button class="btn primario" type="submit" style="width:100%">Entrar</button>
+  </form>
+</div>
+
+<!-- ===================== TOPO ===================== -->
+<header class="topo" id="topo" hidden>
+  <div class="marca"><span class="bolinha" id="bolinha-global"></span> Monitor de Aplicações</div>
+  <div class="resumo" id="resumo"></div>
+  <div class="acoes-topo">
+    <button class="btn pequeno" id="btn-internos" onclick="alternarInternos()" hidden></button>
+    <button class="btn pequeno" onclick="abrirAjustes()">⚙ Ajustes</button>
+    <button class="btn pequeno" id="btn-sair" onclick="sair()" hidden>Sair</button>
+  </div>
+</header>
+
+<div class="banner" id="banner-rede" hidden>
+  <span>⚠️</span>
+  <span><strong>Possível perda de VPN/rede local.</strong> Todos os sites internos estão inacessíveis, mas os públicos respondem. Verifique sua conexão antes de tratar como queda dos serviços.</span>
+</div>
+
+<main id="conteudo" hidden>
+  <div class="grade" id="cards"></div>
+
+  <section class="painel">
+    <h2>Incidentes recentes</h2>
+    <table>
+      <thead>
+        <tr><th>Site</th><th>Início</th><th>Duração</th><th>Situação</th><th>Motivo</th></tr>
+      </thead>
+      <tbody id="corpo-incidentes">
+        <tr><td colspan="5" class="vazio">Nenhum incidente registrado.</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<!-- ===================== MODAL DE SITE ===================== -->
+<div class="overlay" id="modal-site" hidden>
+  <div class="modal">
+    <header>
+      <h2 id="titulo-site">Adicionar site</h2>
+      <button class="x" type="button" onclick="fecharFormSite()" aria-label="Fechar">×</button>
+    </header>
+    <form id="form-site" onsubmit="salvarSite(event)">
+      <div class="corpo">
+        <div class="campo">
+          <label for="f-nome">Nome do site *</label>
+          <input type="text" id="f-nome" maxlength="80" placeholder="Ex.: Portal SIGEDUC" required>
+        </div>
+        <div class="campo">
+          <label for="f-url">URL *</label>
+          <input type="text" id="f-url" placeholder="https://exemplo.gov.br" required>
+          <div class="dica">A checagem é feita a partir do servidor onde este monitor roda. Sites internos exigem que ele esteja na VPN.</div>
+        </div>
+        <div class="linha">
+          <div class="campo">
+            <label for="f-rede">Rede</label>
+            <select id="f-rede">
+              <option value="publico">Público</option>
+              <option value="interno">Interno (VPN)</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="f-status">Status HTTP esperado</label>
+            <input type="text" id="f-status" placeholder="200, 301, 302" value="200">
+            <div class="dica">Separe por vírgula.</div>
+          </div>
+        </div>
+        <div class="linha">
+          <div class="campo">
+            <label for="f-intervalo">Intervalo (segundos)</label>
+            <input type="number" id="f-intervalo" min="10" max="3600" value="60">
+          </div>
+          <div class="campo">
+            <label for="f-timeout">Timeout (segundos)</label>
+            <input type="number" id="f-timeout" min="1" max="60" value="10">
+          </div>
+        </div>
+        <div class="linha">
+          <div class="campo">
+            <label for="f-falhas">Falhas para alertar</label>
+            <input type="number" id="f-falhas" min="1" max="10" value="2">
+            <div class="dica">Evita alarme por oscilação.</div>
+          </div>
+          <div class="campo">
+            <label for="f-palavra">Palavra-chave (opcional)</label>
+            <input type="text" id="f-palavra" maxlength="200" placeholder="Texto que deve aparecer na página">
+          </div>
+        </div>
+        <div class="caixa"><input type="checkbox" id="f-ignorar"><label for="f-ignorar">Ignorar certificado TLS inválido</label></div>
+        <div class="caixa"><input type="checkbox" id="f-ativo" checked><label for="f-ativo">Monitoramento ativo</label></div>
+        <div class="caixa"><input type="checkbox" id="f-notificar" checked><label for="f-notificar">Enviar notificação quando cair/voltar</label></div>
+        <div class="resultado-teste" id="resultado-url"></div>
+      </div>
+      <footer>
+        <button class="btn" type="button" onclick="testarFormulario()">Testar URL</button>
+        <button class="btn" type="button" onclick="fecharFormSite()">Cancelar</button>
+        <button class="btn primario" type="submit">Salvar</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== AJUSTES ===================== -->
+<div id="gaveta" hidden>
+  <div class="overlay" onclick="fecharAjustes()" style="background:rgba(30,42,56,.35)"></div>
+  <aside class="gaveta">
+    <header>
+      <h2>Ajustes</h2>
+      <button class="x" type="button" onclick="fecharAjustes()" aria-label="Fechar">×</button>
+    </header>
+    <div class="abas">
+      <button class="aba ativa" data-aba="sites" onclick="abrirAba('sites')">Sites</button>
+      <button class="aba" data-aba="notificacoes" onclick="abrirAba('notificacoes')">Notificações</button>
+      <button class="aba" data-aba="geral" onclick="abrirAba('geral')">Geral</button>
+    </div>
+    <div class="conteudo">
+      <div id="aviso-leitura" class="aviso" hidden></div>
+
+      <!-- ABA SITES -->
+      <div id="aba-sites">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px">
+          <span style="font-size:13px;color:var(--texto-suave)">Sites cadastrados em <code>sites.json</code></span>
+          <button class="btn primario pequeno" type="button" onclick="abrirFormSite()">+ Adicionar</button>
+        </div>
+        <table>
+          <thead><tr><th>Site</th><th>Rede</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tabela-sites"></tbody>
+        </table>
+      </div>
+
+      <!-- ABA NOTIFICAÇÕES -->
+      <div id="aba-notificacoes" hidden>
+        <div class="bloco">
+          <h3>Canais ativos</h3>
+          <div class="caixa"><input type="checkbox" id="canal-telegram"><label for="canal-telegram">Telegram</label></div>
+          <div class="caixa"><input type="checkbox" id="canal-google-chat"><label for="canal-google-chat">Google Chat</label></div>
+          <div class="caixa"><input type="checkbox" id="canal-webhook"><label for="canal-webhook">Webhook (Teams / Slack / Discord)</label></div>
+          <div class="caixa"><input type="checkbox" id="canal-email"><label for="canal-email">E-mail (SMTP)</label></div>
+        </div>
+
+        <div class="bloco">
+          <h3>Telegram</h3>
+          <div class="campo">
+            <label for="tg-token">Token do bot</label>
+            <input type="password" id="tg-token" autocomplete="new-password" placeholder="Deixe em branco para manter o atual">
+            <div class="dica" id="tg-token-status"></div>
+          </div>
+          <div class="campo">
+            <label for="tg-chat">Chat ID</label>
+            <input type="text" id="tg-chat" placeholder="Ex.: 123456789">
+          </div>
+        </div>
+
+        <div class="bloco">
+          <h3>Google Chat</h3>
+          <div class="campo">
+            <label for="gc-urls">URLs dos webhooks</label>
+            <textarea id="gc-urls" rows="3" placeholder="Cole a URL do webhook do Google Chat&#10;Uma por linha, para avisar várias salas"></textarea>
+            <div class="dica" id="gc-status"></div>
+          </div>
+          <div class="caixa"><input type="checkbox" id="gc-thread" checked><label for="gc-thread">Agrupar alertas de cada site em uma conversa (thread)</label></div>
+          <button class="btn pequeno perigo" type="button" onclick="limparGoogleChat()">Apagar URLs salvas</button>
+          <div class="dica" style="margin-top:8px">
+            Como obter: no espaço do Chat, abra <strong>Apps e integrações → Webhooks → Adicionar webhook</strong>
+            e copie a URL. Ela é uma credencial: fica só no servidor.
+          </div>
+        </div>
+
+        <div class="bloco">
+          <h3>Webhook</h3>
+          <div class="campo">
+            <label for="wh-url">URL do webhook</label>
+            <input type="password" id="wh-url" autocomplete="new-password" placeholder="https://...">
+            <div class="dica" id="wh-status"></div>
+          </div>
+        </div>
+
+        <div class="bloco">
+          <h3>E-mail (SMTP)</h3>
+          <div class="linha">
+            <div class="campo"><label for="sm-host">Servidor</label><input type="text" id="sm-host" placeholder="smtp.exemplo.gov.br"></div>
+            <div class="campo"><label for="sm-porta">Porta</label><input type="number" id="sm-porta" min="1" max="65535" value="587"></div>
+          </div>
+          <div class="caixa"><input type="checkbox" id="sm-tls" checked><label for="sm-tls">Usar STARTTLS (porta 465 usa SSL direto)</label></div>
+          <div class="linha">
+            <div class="campo"><label for="sm-usuario">Usuário</label><input type="text" id="sm-usuario" autocomplete="off"></div>
+            <div class="campo"><label for="sm-senha">Senha</label><input type="password" id="sm-senha" autocomplete="new-password" placeholder="Deixe em branco para manter"></div>
+          </div>
+          <div class="linha">
+            <div class="campo"><label for="sm-de">Remetente</label><input type="text" id="sm-de" placeholder="monitor@exemplo.gov.br"></div>
+            <div class="campo"><label for="sm-para">Destinatários</label><input type="text" id="sm-para" placeholder="equipe@exemplo.gov.br"></div>
+          </div>
+        </div>
+
+        <button class="btn" type="button" onclick="testarNotificacoes()">Enviar notificação de teste</button>
+        <div class="resultado-teste" id="resultado-notificacao"></div>
+        <p class="dica" id="ultima-notificacao" style="margin-top:12px"></p>
+      </div>
+
+      <!-- ABA GERAL -->
+      <div id="aba-geral" hidden>
+        <div class="bloco">
+          <h3>Checagens</h3>
+          <div class="linha">
+            <div class="campo"><label for="g-intervalo">Intervalo padrão (s)</label><input type="number" id="g-intervalo" min="10" max="3600"></div>
+            <div class="campo"><label for="g-timeout">Timeout padrão (s)</label><input type="number" id="g-timeout" min="1" max="60"></div>
+          </div>
+          <div class="linha">
+            <div class="campo"><label for="g-limiar">Considerar lento acima de (ms)</label><input type="number" id="g-limiar" min="500" max="120000"></div>
+            <div class="campo"><label for="g-cooldown">Cooldown de alertas (min)</label><input type="number" id="g-cooldown" min="1" max="1440"></div>
+          </div>
+          <div class="campo"><label for="g-retencao">Retenção do histórico (dias)</label><input type="number" id="g-retencao" min="1" max="365"></div>
+          <div class="campo">
+            <label for="g-ca">Arquivo de CA extra (PEM)</label>
+            <input type="text" id="g-ca" placeholder="certs/meu-intermediario.pem">
+            <div class="dica">Para sites cujo servidor envia a cadeia de certificados incompleta. Caminho relativo à pasta da aplicação.</div>
+          </div>
+          <div class="campo">
+            <label for="g-url-publica">URL pública deste monitor</label>
+            <input type="text" id="g-url-publica" placeholder="http://monitor.interno:8090">
+            <div class="dica">Opcional. Usada no botão "Abrir monitor" dos cards do Google Chat.</div>
+          </div>
+        </div>
+
+        <div class="bloco">
+          <h3>Servidor</h3>
+          <div class="linha">
+            <div class="campo"><label for="g-host">Endereço de escuta</label><input type="text" id="g-host" placeholder="0.0.0.0"></div>
+            <div class="campo"><label for="g-porta">Porta</label><input type="number" id="g-porta" min="1" max="65535"></div>
+          </div>
+          <div class="dica">Mudanças de endereço/porta exigem reiniciar o serviço.</div>
+        </div>
+
+        <div class="bloco">
+          <h3>Acesso</h3>
+          <div class="caixa"><input type="checkbox" id="g-login"><label for="g-login">Exigir login</label></div>
+          <div class="caixa"><input type="checkbox" id="g-editar"><label for="g-editar">Permitir edição de sites pela tela</label></div>
+          <div class="campo">
+            <label for="g-senha">Nova senha</label>
+            <input type="password" id="g-senha" autocomplete="new-password" placeholder="Deixe em branco para manter">
+            <div class="dica">Mínimo de 6 caracteres. Você continua logado após alterar.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <button class="btn" type="button" onclick="fecharAjustes()">Fechar</button>
+      <button class="btn primario" type="button" onclick="salvarAjustes()">Salvar ajustes</button>
+    </footer>
+  </aside>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+"use strict";
+
+const ESTADOS = {
+  no_ar:       { rotulo: "No ar",       classe: "ok" },
+  degradado:   { rotulo: "Lento",       classe: "lento" },
+  instavel:    { rotulo: "Instável",    classe: "lento" },
+  fora_do_ar:  { rotulo: "Fora do ar",  classe: "fora" },
+  bloqueado:   { rotulo: "Bloqueado",   classe: "lento" },
+  pausado:     { rotulo: "Pausado",     classe: "pausado" },
+  desconhecido:{ rotulo: "Aguardando",  classe: "pausado" },
+};
+
+let STATUS = null;
+let AJUSTES = null;
+let AUTENTICADO = false;
+let SOMENTE_LEITURA = false;
+let EDITAR_TELA = true;
+let SITE_EDITANDO = null;
+let TIMER = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+));
+
+async function api(metodo, caminho, corpo) {
+  const opcoes = { method: metodo, headers: {}, credentials: "same-origin" };
+  if (corpo !== undefined) {
+    opcoes.headers["Content-Type"] = "application/json";
+    opcoes.body = JSON.stringify(corpo);
+  }
+  const resp = await fetch(caminho, opcoes);
+  let dados = {};
+  try { dados = await resp.json(); } catch (e) { /* resposta sem JSON */ }
+  if (!resp.ok) {
+    if (resp.status === 401) mostrarLogin();
+    throw new Error(dados.erro || ("HTTP " + resp.status));
+  }
+  return dados;
+}
+
+function toast(mensagem, tipo) {
+  const div = document.createElement("div");
+  div.className = "toast" + (tipo ? " " + tipo : "");
+  div.textContent = mensagem;
+  $("toasts").appendChild(div);
+  setTimeout(() => div.remove(), 5000);
+}
+
+function dataHora(ts) {
+  if (!ts) return "—";
+  return new Date(ts * 1000).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+function haQuanto(ts) {
+  if (!ts) return "—";
+  let s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+  if (s < 60) return "agora";
+  if (s < 3600) return "há " + Math.floor(s / 60) + " min";
+  if (s < 86400) return "há " + Math.floor(s / 3600) + " h";
+  return "há " + Math.floor(s / 86400) + " d";
+}
+
+function duracao(segundos) {
+  segundos = Math.max(0, Math.floor(segundos || 0));
+  if (segundos < 60) return segundos + "s";
+  if (segundos < 3600) return Math.floor(segundos / 60) + " min";
+  const h = Math.floor(segundos / 3600), m = Math.floor((segundos % 3600) / 60);
+  if (h < 24) return h + "h " + m + "min";
+  return Math.floor(h / 24) + "d " + (h % 24) + "h";
+}
+
+function pct(valor) {
+  return (valor === null || valor === undefined) ? "—" : valor.toFixed(1).replace(".", ",") + "%";
+}
+
+/* ============================ sessão / login ============================ */
+
+function mostrarLogin() {
+  AUTENTICADO = false;
+  $("tela-login").hidden = false;
+  $("topo").hidden = true;
+  $("conteudo").hidden = true;
+  $("banner-rede").hidden = true;
+  if (TIMER) { clearInterval(TIMER); TIMER = null; }
+}
+
+async function fazerLogin(evento) {
+  evento.preventDefault();
+  const senha = $("senha-login").value;
+  const erro = $("erro-login");
+  erro.hidden = true;
+  try {
+    await api("POST", "/api/login", { senha });
+    $("senha-login").value = "";
+    $("tela-login").hidden = true;
+    await iniciarApp();
+  } catch (e) {
+    erro.textContent = e.message;
+    erro.hidden = false;
+  }
+}
+
+async function sair() {
+  try { await api("POST", "/api/logout"); } catch (e) { /* ignora */ }
+  location.reload();
+}
+
+async function iniciar() {
+  try {
+    const sessao = await api("GET", "/api/sessao");
+    SOMENTE_LEITURA = sessao.modo_somente_leitura;
+    EDITAR_TELA = sessao.editar_pela_tela;
+    if (sessao.exigir_login && sessao.tem_senha && !sessao.autenticado) {
+      mostrarLogin();
+      return;
+    }
+    AUTENTICADO = !!sessao.autenticado;
+    await iniciarApp();
+  } catch (e) {
+    mostrarLogin();
+  }
+}
+
+async function iniciarApp() {
+  $("tela-login").hidden = true;
+  $("topo").hidden = false;
+  $("conteudo").hidden = false;
+  $("btn-sair").hidden = !AUTENTICADO;
+  await carregarStatus();
+  await carregarIncidentes();
+  if (TIMER) clearInterval(TIMER);
+  TIMER = setInterval(async () => {
+    await carregarStatus();
+    if (document.visibilityState === "visible") await carregarIncidentes();
+  }, 10000);
+}
+
+/* ============================ status / cards ============================ */
+
+async function carregarStatus() {
+  try {
+    STATUS = await api("GET", "/api/status");
+    renderStatus();
+  } catch (e) {
+    if (e.message.indexOf("login") === -1) console.warn(e);
+  }
+}
+
+function renderStatus() {
+  if (!STATUS) return;
+  const r = STATUS.resumo;
+  const pilulas = [
+    '<span class="pilula">' + r.total + " site(s)</span>",
+    '<span class="pilula ok">' + r.no_ar + " no ar</span>",
+  ];
+  if (r.lento) pilulas.push('<span class="pilula lento">' + r.lento + " lento(s)</span>");
+  if (r.instavel) pilulas.push('<span class="pilula lento">' + r.instavel + " instável(is)</span>");
+  if (r.fora_do_ar) pilulas.push('<span class="pilula fora">' + r.fora_do_ar + " fora do ar</span>");
+  if (r.bloqueado) pilulas.push('<span class="pilula lento">' + r.bloqueado + " bloqueado(s)</span>");
+  if (r.pausado) pilulas.push('<span class="pilula">' + r.pausado + " pausado(s)</span>");
+  if (r.aguardando) pilulas.push('<span class="pilula">' + r.aguardando + " aguardando</span>");
+  $("resumo").innerHTML = pilulas.join("");
+
+  const bolinha = $("bolinha-global");
+  bolinha.className = "bolinha" + (r.fora_do_ar ? " fora" : (r.lento || r.instavel || r.bloqueado) ? " lento" : "");
+
+  $("banner-rede").hidden = !STATUS.alerta_rede;
+
+  const internos = STATUS.sites.filter((s) => s.rede === "interno");
+  const btn = $("btn-internos");
+  if (internos.length) {
+    const pausados = internos.every((s) => !s.ativo);
+    btn.hidden = false;
+    btn.textContent = pausados ? "▶ Reativar internos" : "⏸ Pausar internos";
+    btn.dataset.pausar = pausados ? "0" : "1";
+  } else {
+    btn.hidden = true;
+  }
+
+  renderCards(STATUS.sites);
+  if (!$("gaveta").hidden) renderTabelaSites();
+}
+
+function sparkline(serie, estadoAtual) {
+  const pontos = (serie || []).filter((p) => typeof p.latencia_ms === "number");
+  if (pontos.length < 2) return '<div class="spark vazio">sem dados suficientes</div>';
+  const largura = 100, altura = 26;
+  const maximo = Math.max.apply(null, pontos.map((p) => p.latencia_ms)) || 1;
+  const coords = pontos.map((p, i) => {
+    const x = (i / (pontos.length - 1)) * largura;
+    const y = altura - (p.latencia_ms / maximo) * (altura - 3) - 1.5;
+    return x.toFixed(2) + "," + y.toFixed(2);
+  }).join(" ");
+  const cor = estadoAtual === "fora_do_ar" ? "var(--vermelho)"
+    : estadoAtual === "no_ar" ? "var(--verde)" : "var(--amarelo)";
+  return '<svg class="spark" viewBox="0 0 ' + largura + " " + altura + '" preserveAspectRatio="none">' +
+    '<polyline points="' + coords + '" fill="none" stroke="' + cor +
+    '" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
+}
+
+function renderCards(sites) {
+  const alvo = $("cards");
+  if (!sites.length) {
+    alvo.innerHTML = '<div class="painel vazio">Nenhum site cadastrado ainda.<br><br>' +
+      '<button class="btn primario" type="button" onclick="abrirFormSite()">+ Adicionar o primeiro site</button></div>';
+    return;
+  }
+  alvo.innerHTML = sites.map((s) => {
+    const info = ESTADOS[s.estado] || ESTADOS.desconhecido;
+    const classes = "card " + info.classe;
+    const botoes = [];
+    botoes.push('<button class="btn pequeno" type="button" onclick="testarSite(\'' + esc(s.id) + '\')">Testar</button>');
+    if (!SOMENTE_LEITURA && EDITAR_TELA) {
+      botoes.push('<button class="btn pequeno" type="button" onclick="abrirFormSite(\'' + esc(s.id) + '\')">Editar</button>');
+      botoes.push('<button class="btn pequeno" type="button" onclick="alternarSite(\'' + esc(s.id) + '\',' + (!s.ativo) + ')">' + (s.ativo ? "Pausar" : "Ativar") + "</button>");
+      botoes.push('<button class="btn pequeno perigo" type="button" onclick="removerSite(\'' + esc(s.id) + '\')">Remover</button>');
+    }
+    const motivo = (s.estado === "fora_do_ar" || s.estado === "instavel" || s.estado === "bloqueado") && s.erro
+      ? '<p class="motivo">' + esc(s.erro) + "</p>" : "";
+    const ultima = s.ultima_checagem
+      ? "Verificado " + haQuanto(s.ultima_checagem)
+      : "Aguardando primeira checagem";
+    return '<article class="' + classes + '">' +
+      '<div class="card-topo"><div>' +
+        "<h3>" + esc(s.nome) + "</h3>" +
+        '<a class="url" href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">' + esc(s.url) + "</a>" +
+        '<div style="font-size:12px;color:var(--texto-suave);margin-top:4px">' +
+          (s.rede === "interno" ? "🔒 Interno (VPN)" : "🌐 Público") + " · a cada " + s.intervalo_s + "s" +
+        "</div>" +
+      "</div>" +
+      '<span class="tag ' + info.classe + '">' + info.rotulo + "</span></div>" +
+      '<div class="metricas">' +
+        '<div class="metrica"><span>Latência</span><strong>' + (s.latencia_ms === null ? "—" : s.latencia_ms + " ms") + "</strong></div>" +
+        '<div class="metrica"><span>HTTP</span><strong>' + (s.status_code || "—") + "</strong></div>" +
+        '<div class="metrica"><span>Uptime 24h</span><strong>' + pct(s.uptime_24h) + "</strong></div>" +
+      "</div>" +
+      sparkline(s.serie, s.estado) +
+      motivo +
+      '<div class="rodape"><span class="desde">' + ultima +
+        (s.estado_desde ? " · " + info.rotulo.toLowerCase() + " " + haQuanto(s.estado_desde) : "") +
+      '</span><div class="botoes">' + botoes.join("") + "</div></div>" +
+    "</article>";
+  }).join("");
+}
+
+async function carregarIncidentes() {
+  try {
+    const dados = await api("GET", "/api/incidentes");
+    const corpo = $("corpo-incidentes");
+    if (!dados.incidentes.length) {
+      corpo.innerHTML = '<tr><td colspan="5" class="vazio">Nenhum incidente registrado.</td></tr>';
+      return;
+    }
+    corpo.innerHTML = dados.incidentes.map((i) =>
+      "<tr>" +
+        "<td><strong>" + esc(i.nome) + "</strong></td>" +
+        "<td>" + dataHora(i.inicio) + "</td>" +
+        "<td>" + duracao(i.duracao_s) + "</td>" +
+        '<td>' + (i.aberto ? '<span class="tag fora">Em aberto</span>' : '<span class="tag ok">Resolvido</span>') + "</td>" +
+        "<td>" + esc(i.motivo || "—") + "</td>" +
+      "</tr>"
+    ).join("");
+  } catch (e) { /* silencioso */ }
+}
+
+async function testarSite(id) {
+  try {
+    const r = await api("POST", "/api/sites/" + encodeURIComponent(id) + "/teste");
+    if (r.ok) toast("Respondeu " + (r.status_code || "OK") + " em " + r.latencia_ms + " ms.", "ok");
+    else toast("Falhou: " + (r.erro || "sem resposta"), "erro");
+  } catch (e) {
+    toast(e.message, "erro");
+  }
+}
+
+async function alternarSite(id, ativo) {
+  try {
+    await api("PUT", "/api/sites/" + encodeURIComponent(id), { ativo: ativo });
+    toast(ativo ? "Site reativado." : "Site pausado.", "ok");
+    await carregarStatus();
+  } catch (e) { toast(e.message, "erro"); }
+}
+
+async function removerSite(id) {
+  const site = STATUS ? STATUS.sites.find((s) => s.id === id) : null;
+  const nome = site ? site.nome : id;
+  if (!confirm("Remover o site \"" + nome + "\" e todo o histórico dele?")) return;
+  try {
+    await api("DELETE", "/api/sites/" + encodeURIComponent(id));
+    toast("Site removido.", "ok");
+    await carregarStatus();
+    await carregarIncidentes();
+    if (!$("gaveta").hidden) renderTabelaSites();
+  } catch (e) { toast(e.message, "erro"); }
+}
+
+async function alternarInternos() {
+  const pausar = $("btn-internos").dataset.pausar === "1";
+  try {
+    const r = await api("POST", "/api/internos/pausar", { pausar });
+    toast(pausar ? "Sites internos pausados." : "Sites internos reativados.", "ok");
+    await carregarStatus();
+  } catch (e) { toast(e.message, "erro"); }
+}
+
+/* ============================ formulário de site ============================ */
+
+function abrirFormSite(id) {
+  if (SOMENTE_LEITURA) return toast("Modo somente leitura: defina a senha no servidor para editar.", "erro");
+  if (!EDITAR_TELA) return toast("Edição pela tela desativada em sites.json.", "erro");
+  SITE_EDITANDO = id || null;
+  const site = id && STATUS ? STATUS.sites.find((s) => s.id === id) : null;
+  $("titulo-site").textContent = site ? "Editar site" : "Adicionar site";
+  $("f-nome").value = site ? site.nome : "";
+  $("f-url").value = site ? site.url : "";
+  $("f-rede").value = site ? site.rede : "publico";
+  $("f-status").value = site ? (site.status_esperado || [200]).join(", ") : "200";
+  $("f-intervalo").value = site ? site.intervalo_s : 60;
+  $("f-timeout").value = site ? site.timeout_s : 10;
+  $("f-falhas").value = site ? site.falhas_para_alerta : 2;
+  $("f-palavra").value = site && site.palavra_chave ? site.palavra_chave : "";
+  $("f-ignorar").checked = !!(site && site.ignorar_certificado);
+  $("f-ativo").checked = site ? !!site.ativo : true;
+  $("f-notificar").checked = site ? !!site.notificar : true;
+  $("resultado-url").innerHTML = "";
+  $("modal-site").hidden = false;
+  setTimeout(() => $("f-nome").focus(), 30);
+}
+
+function fecharFormSite() {
+  $("modal-site").hidden = true;
+  SITE_EDITANDO = null;
+}
+
+function dadosFormulario() {
+  const status = $("f-status").value.split(",").map((p) => p.trim()).filter(Boolean).map(Number);
+  return {
+    nome: $("f-nome").value.trim(),
+    url: $("f-url").value.trim(),
+    rede: $("f-rede").value,
+    intervalo_s: Number($("f-intervalo").value),
+    timeout_s: Number($("f-timeout").value),
+    status_esperado: status,
+    palavra_chave: $("f-palavra").value.trim() || null,
+    falhas_para_alerta: Number($("f-falhas").value),
+    ignorar_certificado: $("f-ignorar").checked,
+    ativo: $("f-ativo").checked,
+    notificar: $("f-notificar").checked,
+  };
+}
+
+async function testarFormulario() {
+  const alvo = $("resultado-url");
+  alvo.innerHTML = '<div class="linha-res">Testando...</div>';
+  try {
+    const r = await api("POST", "/api/sites/teste", dadosFormulario());
+    if (r.ok) {
+      alvo.innerHTML = '<div class="linha-res ok">✅ Respondeu ' + (r.status_code || "OK") +
+        " em " + r.latencia_ms + " ms.</div>";
+    } else {
+      alvo.innerHTML = '<div class="linha-res erro">❌ ' + esc(r.erro || "sem resposta") + "</div>";
+    }
+  } catch (e) {
+    alvo.innerHTML = '<div class="linha-res erro">' + esc(e.message) + "</div>";
+  }
+}
+
+async function salvarSite(evento) {
+  evento.preventDefault();
+  const dados = dadosFormulario();
+  try {
+    if (SITE_EDITANDO) {
+      await api("PUT", "/api/sites/" + encodeURIComponent(SITE_EDITANDO), dados);
+      toast("Site atualizado.", "ok");
+    } else {
+      await api("POST", "/api/sites", dados);
+      toast("Site adicionado.", "ok");
+    }
+    fecharFormSite();
+    await carregarStatus();
+    if (!$("gaveta").hidden) renderTabelaSites();
+  } catch (e) {
+    toast(e.message, "erro");
+  }
+}
+
+/* ============================ ajustes ============================ */
+
+async function abrirAjustes() {
+  $("gaveta").hidden = false;
+  try {
+    AJUSTES = await api("GET", "/api/ajustes");
+    preencherAjustes();
+  } catch (e) {
+    toast(e.message, "erro");
+  }
+}
+
+function fecharAjustes() {
+  $("gaveta").hidden = true;
+}
+
+function abrirAba(nome) {
+  document.querySelectorAll(".aba").forEach((b) => b.classList.toggle("ativa", b.dataset.aba === nome));
+  ["sites", "notificacoes", "geral"].forEach((n) => {
+    $("aba-" + n).hidden = n !== nome;
+  });
+}
+
+function preencherAjustes() {
+  if (!AJUSTES) return;
+  const c = AJUSTES.config || {};
+  const s = AJUSTES.segredos || {};
+  const smtp = s.smtp || {};
+
+  $("canal-telegram").checked = !!(c.canais_ativos && c.canais_ativos.telegram);
+  $("canal-google-chat").checked = !!(c.canais_ativos && c.canais_ativos.google_chat);
+  $("canal-webhook").checked = !!(c.canais_ativos && c.canais_ativos.webhook);
+  $("canal-email").checked = !!(c.canais_ativos && c.canais_ativos.email);
+
+  $("tg-chat").value = s.telegram_chat_id || "";
+  $("tg-token").value = "";
+  $("tg-token-status").textContent = s.telegram_configurado
+    ? "Token já configurado (não é exibido)."
+    : "Nenhum token configurado.";
+
+  $("wh-url").value = "";
+  $("wh-status").textContent = s.webhook_configurado
+    ? "Webhook já configurado (não é exibido)."
+    : "Nenhum webhook configurado.";
+
+  $("gc-urls").value = "";
+  $("gc-thread").checked = s.google_chat_thread !== false;
+  $("gc-status").textContent = s.google_chat_configurado
+    ? s.google_chat_qtd + " URL(s) configurada(s). Deixe o campo em branco para manter."
+    : "Nenhuma URL configurada.";
+
+  $("sm-host").value = smtp.host || "";
+  $("sm-porta").value = smtp.porta || 587;
+  $("sm-tls").checked = smtp.tls !== false;
+  $("sm-usuario").value = smtp.usuario || "";
+  $("sm-senha").value = "";
+  $("sm-de").value = smtp.de || "";
+  $("sm-para").value = smtp.para || "";
+
+  $("g-host").value = c.host || "0.0.0.0";
+  $("g-porta").value = c.porta || 8090;
+  $("g-login").checked = c.exigir_login !== false;
+  $("g-editar").checked = !!AJUSTES.editar_pela_tela;
+  $("g-intervalo").value = c.intervalo_padrao_s || 60;
+  $("g-timeout").value = c.timeout_padrao_s || 10;
+  $("g-limiar").value = c.limiar_lento_ms || 5000;
+  $("g-cooldown").value = c.cooldown_min || 5;
+  $("g-retencao").value = c.retencao_dias || 7;
+  $("g-ca").value = c.ca_bundle || "";
+  $("g-url-publica").value = c.url_publica || "";
+  $("g-senha").value = "";
+
+  const aviso = $("aviso-leitura");
+  if (AJUSTES.modo_somente_leitura) {
+    aviso.hidden = false;
+    aviso.innerHTML = "🔒 <strong>Modo somente leitura.</strong> Nenhuma senha definida. Rode " +
+      "<code>python3 app.py senha</code> no servidor ou defina uma nova senha abaixo.";
+  } else {
+    aviso.hidden = true;
+  }
+
+  renderTabelaSites();
+  $("ultima-notificacao").textContent = "";
+  if (STATUS && STATUS.ultima_notificacao && STATUS.ultima_notificacao.ts) {
+    const n = STATUS.ultima_notificacao;
+    $("ultima-notificacao").textContent = "Última notificação: " +
+      dataHora(n.ts) + " — " + (n.detalhe || "");
+  }
+}
+
+function renderTabelaSites() {
+  const corpo = $("tabela-sites");
+  if (!STATUS) { corpo.innerHTML = ""; return; }
+  if (!STATUS.sites.length) {
+    corpo.innerHTML = '<tr><td colspan="4" class="vazio">Nenhum site cadastrado.</td></tr>';
+    return;
+  }
+  corpo.innerHTML = STATUS.sites.map((s) => {
+    const info = ESTADOS[s.estado] || ESTADOS.desconhecido;
+    return "<tr>" +
+      "<td><strong>" + esc(s.nome) + "</strong><br><span style=\"font-size:12px;color:var(--texto-suave)\">" + esc(s.url) + "</span></td>" +
+      "<td>" + (s.rede === "interno" ? "Interno" : "Público") + "</td>" +
+      '<td><span class="tag ' + info.classe + '">' + (s.ativo ? info.rotulo : "Pausado") + "</span></td>" +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn pequeno" type="button" onclick="abrirFormSite(\'' + esc(s.id) + '\')">Editar</button> ' +
+        '<button class="btn pequeno perigo" type="button" onclick="removerSite(\'' + esc(s.id) + '\')">Remover</button>' +
+      "</td></tr>";
+  }).join("");
+}
+
+async function salvarAjustes() {
+  const segredos = {
+    telegram_token: $("tg-token").value,
+    telegram_chat_id: $("tg-chat").value,
+    google_chat_urls: $("gc-urls").value.split("\n").map((u) => u.trim()).filter(Boolean),
+    google_chat_thread: $("gc-thread").checked,
+    webhook_url: $("wh-url").value,
+    smtp: {
+      host: $("sm-host").value,
+      porta: Number($("sm-porta").value),
+      tls: $("sm-tls").checked,
+      usuario: $("sm-usuario").value,
+      senha: $("sm-senha").value,
+      de: $("sm-de").value,
+      para: $("sm-para").value,
+    },
+  };
+  const novaSenha = $("g-senha").value;
+  if (novaSenha) segredos.senha = novaSenha;
+
+  const corpo = {
+    config: {
+      host: $("g-host").value.trim() || "0.0.0.0",
+      porta: Number($("g-porta").value),
+      exigir_login: $("g-login").checked,
+      intervalo_padrao_s: Number($("g-intervalo").value),
+      timeout_padrao_s: Number($("g-timeout").value),
+      limiar_lento_ms: Number($("g-limiar").value),
+      cooldown_min: Number($("g-cooldown").value),
+      retencao_dias: Number($("g-retencao").value),
+      ca_bundle: $("g-ca").value.trim(),
+      url_publica: $("g-url-publica").value.trim(),
+      canais_ativos: {
+        telegram: $("canal-telegram").checked,
+        google_chat: $("canal-google-chat").checked,
+        webhook: $("canal-webhook").checked,
+        email: $("canal-email").checked,
+      },
+    },
+    segredos: segredos,
+    sites_doc_editar: $("g-editar").checked,
+  };
+
+  try {
+    AJUSTES = await api("PUT", "/api/ajustes", corpo);
+    SOMENTE_LEITURA = !!AJUSTES.modo_somente_leitura;
+    EDITAR_TELA = !!AJUSTES.editar_pela_tela;
+    if (novaSenha) AUTENTICADO = true;
+    toast("Ajustes salvos.", "ok");
+    preencherAjustes();
+    await carregarStatus();
+  } catch (e) {
+    toast(e.message, "erro");
+  }
+}
+
+async function limparGoogleChat() {
+  if (!confirm("Apagar as URLs do Google Chat salvas?")) return;
+  try {
+    AJUSTES = await api("PUT", "/api/ajustes", {
+      segredos: { google_chat_urls: [] },
+      limpar: ["google_chat_urls"],
+    });
+    preencherAjustes();
+    toast("URLs do Google Chat removidas.", "ok");
+  } catch (e) {
+    toast(e.message, "erro");
+  }
+}
+
+async function testarNotificacoes() {
+  const alvo = $("resultado-notificacao");
+  alvo.innerHTML = '<div class="linha-res">Enviando...</div>';
+  try {
+    const r = await api("POST", "/api/notificacoes/teste");
+    if (!r.resultados.length) {
+      alvo.innerHTML = '<div class="linha-res erro">Nenhum canal ativo ou configurado.</div>';
+      return;
+    }
+    alvo.innerHTML = r.resultados.map((x) =>
+      '<div class="linha-res ' + (x.ok ? "ok" : "erro") + '">' +
+        (x.ok ? "✅ " : "❌ ") + esc(x.canal) + (x.ok ? " enviado." : " falhou: " + esc(x.erro || "erro")) +
+      "</div>"
+    ).join("");
+  } catch (e) {
+    alvo.innerHTML = '<div class="linha-res erro">' + esc(e.message) + "</div>";
+  }
+}
+
+/* ============================ inicialização ============================ */
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (!$("modal-site").hidden) fecharFormSite();
+    else if (!$("gaveta").hidden) fecharAjustes();
+  }
+});
+
+iniciar();
+</script>
+</body>
+</html>

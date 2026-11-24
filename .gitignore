@@ -1,0 +1,13 @@
+# Segredos e banco local — não versionar
+secrets.json
+monitor.db
+monitor.db-wal
+monitor.db-shm
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Temporários
+*.tmp
