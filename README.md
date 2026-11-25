@@ -60,7 +60,11 @@ O botão **Testar URL** faz uma checagem na hora, antes de salvar.
 
 ### Pelo arquivo `sites.json`
 
-O arquivo é a fonte de verdade e é recarregado sozinho quando muda:
+O arquivo é a fonte de verdade e é recarregado sozinho quando muda. Se ele não
+existir, o app cria um com lista vazia na primeira execução (por isso ele não é
+versionado no Git: cada instalação mantém o seu).
+
+Exemplo de conteúdo:
 
 ```json
 {
@@ -246,7 +250,7 @@ Se a VPN for por interface, garanta que o serviço suba depois dela (ajuste `Aft
 |---|---|
 | `app.py` | Aplicação |
 | `index.html` | Tela |
-| `sites.json` | Sites monitorados (versione no Git) |
+| `sites.json` | Sites monitorados (local, criado automaticamente; não versionado) |
 | `config.json` | Ajustes gerais |
 | `certs/` | Certificados de CA extra para sites com cadeia incompleta |
 | `secrets.json` | Senha e credenciais (não versionar) |

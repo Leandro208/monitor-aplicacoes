@@ -1,13 +1,55 @@
-# Segredos e banco local — não versionar
+# --- Credenciais e dados locais (NUNCA versionar) ---
 secrets.json
+secrets*.json
+sites.json
+.env
+.env.*
+!.env.example
+
+# --- Banco e histórico local ---
 monitor.db
-monitor.db-wal
-monitor.db-shm
+monitor.db-*
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.db-journal
 
-# Python
+# --- Chaves e certificados privados ---
+# Os .pem de CA em certs/ são públicos e devem ser versionados.
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+certs/*.key
+
+# --- Python ---
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
 
-# Temporários
+# --- Logs e temporários ---
+*.log
+logs/
 *.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*~
+
+# --- Editores e sistema ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
